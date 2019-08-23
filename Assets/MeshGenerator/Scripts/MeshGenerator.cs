@@ -93,6 +93,7 @@ namespace YiLiang.Effect.Water
                 name = "tile",
 
                 vertices = GeneratorVertices(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
+                uv = GeneratorUVs(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
                 triangles = GeneratorTriangles(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
                 colors = GeneratorColors(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum)
             };
@@ -116,6 +117,41 @@ namespace YiLiang.Effect.Water
             return colors;
         }
 
+        private Vector3[] GeneratorVertices(int width, int height)
+        {
+            Vector3[] vertices = new Vector3[(width + 1) * (height + 1)];
+
+            int verticesIndex = 0;
+            for (int i = 0; i <= height; ++i)
+            {
+                for (int j = 0; j <= width; ++j)
+                {
+                    vertices[verticesIndex++] = new Vector3(j, 0, i);
+                }
+            }
+
+            return vertices;
+        }
+
+
+        private Vector2[] GeneratorUVs(int width, int height)
+        {
+           Vector2[] uvs = new Vector2[(width + 1) * (height + 1)];
+
+           float steepx = 1.0f / width;
+           float steepy = 1.0f / height;
+
+            int verticesIndex = 0;
+            for (int i = 0; i <= height; ++i)
+            {
+                for (int j = 0; j <= width; ++j)
+                {
+                    uvs[verticesIndex++] = new Vector2(j*steepx, i*steepy);
+                }
+            }
+
+            return uvs;
+        }
         private int[] GeneratorTriangles(int width, int height)
         {
             int[] triangles = new int[width * height * 6];
@@ -127,37 +163,18 @@ namespace YiLiang.Effect.Water
                 for (int j = 0; j < width; ++j)
                 {
                     triangles[triangleIndex + 0] = i * (width + 1) + j;
-                    triangles[triangleIndex + 1] = i * (width + 1) + j + 1;
-                    triangles[triangleIndex + 2] = (i + 1) * (width + 1) + j;
+                    triangles[triangleIndex + 1] = (i + 1) * (width + 1) + j;
+                    triangles[triangleIndex + 2] = i * (width + 1) + j + 1;
 
                     triangles[triangleIndex + 3] = i * (width + 1) + j + 1;
-                    triangles[triangleIndex + 4] = (i + 1) * (width + 1) + j + 1;
-                    triangles[triangleIndex + 5] = (i + 1) * (width + 1) + j;
+                    triangles[triangleIndex + 4] = (i + 1) * (width + 1) + j;
+                    triangles[triangleIndex + 5] = (i + 1) * (width + 1) + j + 1;
 
                     triangleIndex += 6;
                 }
             }
 
             return triangles;
-        }
-
-        private Vector3[] GeneratorVertices(int width, int height)
-        {
-            Vector3[] vertices = new Vector3[(width + 1) * (height + 1)];
-
-            float tileX = 1.0f / (float)(width);
-            float tileY = 1.0f / (float)(height);
-
-            int verticesIndex = 0;
-            for (int i = 0; i <= height; ++i)
-            {
-                for (int j = 0; j <= width; ++j)
-                {
-                    vertices[verticesIndex++] = new Vector3(tileX * j, 0, i * tileY);
-                }
-            }
-
-            return vertices;
         }
     }
 }

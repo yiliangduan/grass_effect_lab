@@ -1,4 +1,4 @@
-﻿Shader "YiLiang/Effect/Grass/GrassEffect"
+﻿Shader "YiLiang/Effect/GrassEffect"
 {
     Properties
     {
@@ -9,12 +9,13 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="Transparent" "RenderQueue"="Transparent"}
+
         LOD 200
 
         CGPROGRAM
 
-        #pragma surface surf Standard vertex:vert
+        #pragma surface surf Standard vertex:vert decal:blend
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
@@ -41,9 +42,10 @@
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
-            fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
+            fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
 
             o.Albedo = c.rgb;
+            
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
