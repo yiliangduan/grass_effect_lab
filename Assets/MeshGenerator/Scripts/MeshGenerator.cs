@@ -13,6 +13,8 @@ namespace YiLiang.Effect.Water
         /// </summary>
         public int TileCount = 8;
 
+        public Vector2 GridSize = Vector2.one;
+
         /// <summary>
         /// 每个块的垂直方向的三角形数
         /// </summary>
@@ -92,7 +94,7 @@ namespace YiLiang.Effect.Water
             {
                 name = "tile",
 
-                vertices = GeneratorVertices(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
+                vertices = GeneratorVertices(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum, Config.GridSize.x, Config.GridSize.y),
                 uv = GeneratorUVs(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
                 triangles = GeneratorTriangles(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum),
                 colors = GeneratorColors(Config.TileHorizontalVertexNum, Config.TileVerticalVertexNum)
@@ -117,7 +119,7 @@ namespace YiLiang.Effect.Water
             return colors;
         }
 
-        private Vector3[] GeneratorVertices(int width, int height)
+        private Vector3[] GeneratorVertices(int width, int height, float gridWidth, float gridHeight)
         {
             Vector3[] vertices = new Vector3[(width + 1) * (height + 1)];
 
@@ -126,7 +128,7 @@ namespace YiLiang.Effect.Water
             {
                 for (int j = 0; j <= width; ++j)
                 {
-                    vertices[verticesIndex++] = new Vector3(j, 0, i);
+                    vertices[verticesIndex++] = new Vector3(j*gridWidth, 0, i*gridHeight);
                 }
             }
 
