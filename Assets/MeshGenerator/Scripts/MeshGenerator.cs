@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 
-namespace YiLiang.Effect.Water
+namespace YiLiang.Effect.Tool
 {
     [System.Serializable]
     public class MeshConfig

@@ -1,5 +1,4 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
+﻿
 Shader "YiLiang/Effect/GrassEffect"
 {
     Properties
@@ -8,14 +7,18 @@ Shader "YiLiang/Effect/GrassEffect"
 
         _SwingTex ("Swing Tex", 2D) = "white" {}
 
-        _NoiseTex ("Noise Tex", 2D) = "white" {}
-
         _Strength ("Stength", Float) = 0.5
+
+        _Speed ("Speed", Float) = 0.5
+
     }
     SubShader
     {
         Tags { "RenderType"="Transparent" "RenderQueue"="Transparent"}
         LOD 100
+
+        //草需要双面渲染，关闭裁剪
+        Cull Off
 
         Blend SrcAlpha OneMinusSrcAlpha
 
@@ -38,8 +41,6 @@ Shader "YiLiang/Effect/GrassEffect"
                 float2 uv : TEXCOORD0;
        
                 float4 vertex : SV_POSITION;
-
-                float4 debug : TEXCOORD1;
             };
 
             sampler2D _MainTex;
@@ -48,32 +49,63 @@ Shader "YiLiang/Effect/GrassEffect"
             sampler2D _SwingTex;
             float4 _SwingTex_ST;
 
-            sampler2D _NoiseTex;
-            float4 _NoiseTex_ST;
-
             float _Strength;
+            float _Speed;
 
-            v2f vert (appdata v)
+            //平滑 曲线
+            float4 SmoothCurve( float4 x )
+            {
+                return x * x * (3.0 - 2.0 * x);
+            }
+
+            //波
+            float4 TriangleWave( float4 x )
+            {
+                return abs (frac( x + 0.5 ) * 2.0 - 1.0);
+            }
+
+            //波平滑
+            float4 SmoothTriangleWave( float4 x )
+            {
+                return SmoothCurve(TriangleWave( x ));
+            }
+
+            //草的风吹摇摆效果的相位变化
+			float3 GrassSwingPhase(float4 vertex, fixed brachPhaseWeight)
+			{
+				float4 worldPos = mul(unity_ObjectToWorld, vertex);
+
+				float objectPhase = dot(worldPos, 1);
+				fixed branchPhase = objectPhase;
+
+				float vtxPhase = dot(vertex.xyz, branchPhase);
+				float wavesIn = _Time.y + vtxPhase;
+
+				float4 waves = (frac(wavesIn.xxxx * float4(1.975, 0.793, 0.375, 0.193)) * 2.0 - 1.0) * _Speed * brachPhaseWeight;
+				waves = SmoothTriangleWave(waves);
+
+				float2 wavesSum = waves.xz + waves.yw;
+
+				return wavesSum.xxy * _Speed;
+			}
+
+            v2f vert (appdata input)
             {
                 v2f o;
 
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.uv = TRANSFORM_TEX(input.uv, _MainTex);
 
-                float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
+                //相位变化权重，草的根部近似0，越往草尖，值越大
+                fixed brachPhaseWeight = max(0, tex2Dlod(_SwingTex, fixed4(TRANSFORM_TEX(input.uv, _SwingTex), 0, 0)).r);
 
-                fixed4 baseStength = tex2Dlod(_SwingTex, fixed4(TRANSFORM_TEX(v.uv, _SwingTex), 0, 0));
-                fixed4 swingOffset = tex2Dlod(_NoiseTex, fixed4(TRANSFORM_TEX(v.uv + float2(_Time.y, _Time.y*0.5), _NoiseTex), 0, 0));
-
-                worldPos.z +=  _Strength * swingOffset.x * baseStength.r;
-
-                o.vertex = mul(UNITY_MATRIX_VP, worldPos);
-
-                o.debug = baseStength;
+                float4 vertexPhase = float4(input.vertex.xyz + GrassSwingPhase(input.vertex, brachPhaseWeight), input.vertex.w);
+                
+                o.vertex = UnityObjectToClipPos(vertexPhase);
 
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag (v2f i) : COLOR
             {
                 fixed4 col = tex2D(_MainTex, i.uv);
 

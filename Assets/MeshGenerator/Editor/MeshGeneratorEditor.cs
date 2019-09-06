@@ -2,7 +2,7 @@
 using UnityEditor;
 
 
-namespace YiLiang.Effect.Water
+namespace YiLiang.Effect.Tool
 {
     [CustomEditor(typeof(MeshGenerator))]
     public class MeshGeneratorEditor : Editor
