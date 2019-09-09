@@ -11,14 +11,11 @@ Shader "YiLiang/Effect/GrassEffect"
 
         _Speed ("Speed", Float) = 0.5
 
-        _RoleReactDistance ("Role React Distance", Float) = 0.5
+        _YOffset("Y offset", float) = 0.0
 
-        _YOffset("Y offset", float) = 0.0// y offset, below this is no animation
+        _MaxOffset("Max Offset", Range(0, 2)) = 0.1
 
-        _MaxWidth("Max Displacement Width", Range(0, 2)) = 0.1 // width of the line around the dissolve
-
-        _Radius("Radius", Range(0,5)) = 1 // width of the line around the dissolve
-
+        _Radius("Radius", Range(0,5)) = 1
     }
     SubShader
     {
@@ -61,11 +58,9 @@ Shader "YiLiang/Effect/GrassEffect"
             float _Speed;
 
             float3 _RolePos;
-            float _RoleReactDistance;
-
             float _YOffset;
-            float _Rigidness;
-            float _MaxWidth;
+            float _MaxOffset;
+            float _Radius;
 
             //平滑 曲线
             float4 SmoothCurve( float4 x )
@@ -101,7 +96,17 @@ Shader "YiLiang/Effect/GrassEffect"
 
 				float2 wavesSum = waves.xz + waves.yw;
 
-				return wavesSum.xxy * _Speed;
+				float3 phase = wavesSum.xxy * _Speed;
+
+                //角色的周围草地挤压的效果
+                float distanceToRole = distance(worldPos.xyz, _RolePos);
+                float reactDistance = 1 - saturate(distanceToRole / _Radius); 
+
+                float2 offset = float2((sign(worldPos.x - _RolePos.x))*reactDistance, sign(worldPos.z - _RolePos.z)*reactDistance);
+
+                phase.xz += clamp(offset * (phaseWeight), -_MaxOffset, _MaxOffset);
+
+                return phase;
 			}
 
             v2f vert (appdata input)
@@ -114,20 +119,7 @@ Shader "YiLiang/Effect/GrassEffect"
                 fixed phaseWeight = max(0, tex2Dlod(_SwingTex, fixed4(TRANSFORM_TEX(input.uv, _SwingTex), 0, 0)).r);
 
                 float4 vertexPhase = float4(input.vertex.xyz + GrassSwingPhase(input.vertex, phaseWeight), input.vertex.w);
-                /*
-                float4 worldPos = mul(unity_ObjectToWorld, input.vertex);
-                float distanceToRole = distance(_RolePos, worldPos.xyz);
-                
-                //float reactDistance = max(0, (_RoleReactDistance - distanceToRole)); 
-
-                float radius = 1 - saturate(distanceToRole / _RoleReactDistance);
-
-                float3 sphereDisp = worldPos -_RolePos;
-
-                sphereDisp *= radius;
-
-                vertexPhase.xz += clamp(distanceToRole * step(_YOffset, input.vertex.y), -_MaxWidth, _MaxWidth);
-                */
+         
                 o.vertex = UnityObjectToClipPos(vertexPhase);
 
                 return o;
